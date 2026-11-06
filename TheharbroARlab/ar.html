@@ -1,0 +1,217 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>The Harbro AR Lab</title>
+
+  <!-- A-Frame -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+
+  <!-- MindAR -->
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      background: #EAF5FF;
+    }
+
+    #header {
+      position: fixed;
+      top: 12px;
+      width: 100%;
+      text-align: center;
+      z-index: 10;
+      color: #D6B45C;
+      font-weight: bold;
+      font-size: 22px;
+      text-shadow: 1px 2px 3px #777;
+      pointer-events: none;
+    }
+
+    #controls {
+      position: fixed;
+      bottom: 18px;
+      left: 0;
+      width: 100%;
+      z-index: 20;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+
+    button {
+      background: #1677FF;
+      color: white;
+      border: none;
+      border-radius: 7px;
+      padding: 12px 17px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    #volume {
+      width: 85px;
+    }
+
+    #status {
+      position: fixed;
+      top: 55px;
+      width: 100%;
+      text-align: center;
+      z-index: 20;
+      color: white;
+      text-shadow: 1px 1px 3px #333;
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    #scanning {
+      position: fixed;
+      bottom: 90px;
+      width: 100%;
+      text-align: center;
+      z-index: 10;
+      color: white;
+      text-shadow: 1px 1px 3px #333;
+      pointer-events: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="header">THE HARBRO AR LAB</div>
+
+  <div id="status">Arahkan kamera ke marker Harbro Cakes</div>
+
+  <div id="scanning">
+    Mencari marker Harbro Cakes & Catering...
+  </div>
+
+  <div id="controls">
+    <button id="play">PLAY</button>
+    <button id="pause">PAUSE</button>
+    <button id="mute">UNMUTE</button>
+
+    <label style="color:white">
+      Volume
+      <input id="volume" type="range"
+             min="0" max="1" step="0.1" value="1">
+    </label>
+  </div>
+
+  <video
+    id="adVideo"
+    src="./assets/video/iklan.mp4"
+    preload="auto"
+    loop
+    playsinline
+    webkit-playsinline
+    crossorigin="anonymous"
+    style="display:none">
+  </video>
+
+  <a-scene
+    mindar-image="imageTargetSrc: ./assets/targets.mind;
+                 autoStart: true;
+                 maxTrack: 1"
+    color-space="sRGB"
+    renderer="colorManagement: true; physicallyCorrectLights: true"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false">
+
+    <a-camera
+      position="0 0 0"
+      look-controls="enabled: false">
+    </a-camera>
+
+    <a-entity mindar-image-target="targetIndex: 0">
+
+      <!-- Gold frame -->
+      <a-box
+        position="0 0 0.04"
+        width="0.66"
+        height="1.16"
+        depth="0.025"
+        material="color: #D6B45C; metalness: 0.6">
+      </a-box>
+
+      <!-- Vertical 9:16 video -->
+      <a-video
+        id="videoScreen"
+        src="#adVideo"
+        position="0 0 0.06"
+        width="0.5625"
+        height="1">
+      </a-video>
+
+    </a-entity>
+
+  </a-scene>
+
+  <script>
+    const video = document.querySelector("#adVideo");
+    const status = document.querySelector("#status");
+    const volume = document.querySelector("#volume");
+
+    const target = document.querySelector(
+      "[mindar-image-target]"
+    );
+
+    video.muted = true;
+
+    document.querySelector("#play").onclick = async () => {
+      try {
+        video.muted = false;
+        video.volume = Number(volume.value);
+        await video.play();
+        status.textContent = "Advertisement Playing";
+      } catch (error) {
+        status.textContent = "Video playback error";
+        console.error(error);
+      }
+    };
+
+    document.querySelector("#pause").onclick = () => {
+      video.pause();
+      status.textContent = "Advertisement Paused";
+    };
+
+    document.querySelector("#mute").onclick = () => {
+      video.muted = !video.muted;
+
+      document.querySelector("#mute").textContent =
+        video.muted ? "UNMUTE" : "MUTE";
+    };
+
+    volume.oninput = () => {
+      video.volume = Number(volume.value);
+      if (video.volume > 0) video.muted = false;
+    };
+
+    target.addEventListener("targetFound", () => {
+      document.querySelector("#scanning").textContent =
+        "HAR BRO MARKER DETECTED";
+      status.textContent = "Marker Found - Press PLAY";
+    });
+
+    target.addEventListener("targetLost", () => {
+      document.querySelector("#scanning").textContent =
+        "Arahkan kamera ke marker Harbro Cakes";
+      status.textContent = "Marker Lost";
+      video.pause();
+    });
+  </script>
+
+</body>
+</html>
