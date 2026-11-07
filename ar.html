@@ -245,17 +245,9 @@
 
         <a-entity id="revealRig">
 
-          <!-- GOLD FRAME -->
-          <a-box position="0 0.51 0" width="0.66" height="0.025" depth="0.025"
-            material="color: #D6B45C; emissive: #D6B45C; emissiveIntensity: 1.5"></a-box>
-          <a-box position="0 -0.51 0" width="0.66" height="0.025" depth="0.025"
-            material="color: #D6B45C; emissive: #D6B45C; emissiveIntensity: 1.5"></a-box>
-          <a-box position="-0.305 0 0" width="0.025" height="1.02" depth="0.025"
-            material="color: #D6B45C; emissive: #D6B45C; emissiveIntensity: 1.5"></a-box>
-          <a-box position="0.305 0 0" width="0.025" height="1.02" depth="0.025"
-            material="color: #D6B45C; emissive: #D6B45C; emissiveIntensity: 1.5"></a-box>
+          <!-- BINGKAI EMAS SUDAH DIHAPUS -->
 
-          <!-- VIDEO DEPAN (dibungkus agar orientasi bisa diatur lewat tombol) -->
+          <!-- VIDEO DEPAN -->
           <a-entity id="frontWrap" position="0 0 0.01">
             <a-video
               id="videoScreen"
@@ -277,12 +269,12 @@
             </a-video>
           </a-entity>
 
-          <!-- GLOW LAYER -->
+          <!-- GLOW LAYER (di belakang video, hanya sedikit terlihat di tepi) -->
           <a-plane
             id="screenGlow"
             position="0 0 0"
-            width="0.62"
-            height="1.08"
+            width="0.59"
+            height="1.04"
             material="
               color: #55B9F2;
               emissive: #55B9F2;
@@ -336,13 +328,12 @@
 
     // ===== UKURAN HOLOGRAM =====
     const HOLO_SCALE = 1.2;
-    const HOLO_LIFT = 0.51 * HOLO_SCALE + 0.03;
+    const HOLO_LIFT = 0.5 * HOLO_SCALE + 0.03;
 
-    // ===== ORIENTASI VIDEO (diatur lewat tombol, tersimpan otomatis) =====
-    // Setelah ketemu yang pas, bisa diubah default-nya di sini.
-    let vRot = 0;     // 0 atau 180
-    let vFlipX = 1;   // 1 atau -1 (balik kiri-kanan)
-    let vFlipY = 1;   // 1 atau -1 (balik atas-bawah)
+    // ===== ORIENTASI VIDEO (tersimpan otomatis dari tombol) =====
+    let vRot = 0;
+    let vFlipX = 1;
+    let vFlipY = 1;
 
     try {
       const saved = JSON.parse(localStorage.getItem("harbroVideoOrient"));
