@@ -315,14 +315,15 @@
               emissiveIntensity: 1.5">
           </a-box>
 
-          <!-- VIDEO VERTICAL 9:16 (Membalik sumbu Y tekstur video dengan repeat="1 -1") -->
+          <!-- VIDEO VERTICAL 9:16 (Diputar 180 derajat pada sumbu Z agar tidak terbalik) -->
           <a-video
             id="videoScreen"
             src="#adVideo"
             position="0 0 0.01"
+            rotation="0 0 180"
             width="0.5625"
             height="1"
-            material="shader: flat; side: double; repeat: 1 -1">
+            material="shader: flat; side: double">
           </a-video>
 
           <!-- GLOW LAYER -->
