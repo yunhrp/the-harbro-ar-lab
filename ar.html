@@ -236,7 +236,7 @@
           side: double">
       </a-plane>
 
-      <!-- HOLOGRAM RIG: rotasi 90 pada sumbu X agar berdiri tegak dari marker datar -->
+      <!-- HOLOGRAM RIG -->
       <a-entity
         id="holoRig"
         position="0 0 0"
@@ -244,8 +244,6 @@
         visible="false">
 
         <a-entity id="revealRig">
-
-          <!-- TIDAK ADA BINGKAI EMAS DI SINI -->
 
           <!-- VIDEO DEPAN -->
           <a-entity id="frontWrap" position="0 0 0.01">
@@ -269,7 +267,7 @@
             </a-video>
           </a-entity>
 
-          <!-- GLOW LAYER (di belakang video, hanya sedikit terlihat di tepi) -->
+          <!-- GLOW LAYER -->
           <a-plane
             id="screenGlow"
             position="0 0 0"
@@ -330,10 +328,8 @@
     const HOLO_SCALE = 1.2;
     const HOLO_LIFT = 0.5 * HOLO_SCALE + 0.03;
 
-    // ===== POTONG TEPI VIDEO =====
-    // 1 = tidak dipotong. 0.92 = tepi terpotong 4% tiap sisi.
-    // Jika bingkai emas dari file MP4 masih terlihat, kecilkan: 0.88, 0.85, dst.
-    const CROP = 0.92;
+    // ===== TANPA CROP (TAMPILKAN PENUH) =====
+    const CROP = 1.0;
 
     function applyCrop() {
       const offset = (1 - CROP) / 2;
@@ -344,7 +340,7 @@
       });
     }
 
-    // ===== ORIENTASI VIDEO (tersimpan otomatis dari tombol) =====
+    // ===== ORIENTASI VIDEO =====
     let vRot = 0;
     let vFlipX = 1;
     let vFlipY = 1;
