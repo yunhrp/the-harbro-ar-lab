@@ -127,7 +127,7 @@
       font-size: 14px;
     }
 
-    /* Video source tetap aktif untuk tekstur A-Frame */
+    /* VIDEO SOURCE */
     #adVideo {
       position: fixed;
       left: -1000px;
@@ -259,16 +259,17 @@
       </a-plane>
 
       <!-- HOLOGRAM RIG -->
-      <!-- Bidang video menghadap kamera -->
+      <!-- Menghadap kamera HP -->
       <a-entity
         id="holoRig"
         position="0 0 0.08"
         rotation="-90 0 0"
         visible="false">
 
+        <!-- VERTICAL REVEAL -->
         <a-entity id="revealRig">
 
-          <!-- GOLD FRAME: EMPAT SISI -->
+          <!-- GOLD FRAME: ATAS -->
           <a-box
             position="0 0.51 0"
             width="0.66"
@@ -280,6 +281,7 @@
               emissiveIntensity: 1.5">
           </a-box>
 
+          <!-- GOLD FRAME: BAWAH -->
           <a-box
             position="0 -0.51 0"
             width="0.66"
@@ -291,6 +293,7 @@
               emissiveIntensity: 1.5">
           </a-box>
 
+          <!-- GOLD FRAME: KIRI -->
           <a-box
             position="-0.305 0 0"
             width="0.025"
@@ -302,6 +305,7 @@
               emissiveIntensity: 1.5">
           </a-box>
 
+          <!-- GOLD FRAME: KANAN -->
           <a-box
             position="0.305 0 0"
             width="0.025"
@@ -382,7 +386,6 @@
     let animationId = null;
 
     let particles = [];
-    let arStarted = false;
 
     video.muted = true;
     video.volume = 1;
@@ -448,7 +451,9 @@
 
       holoRig.object3D.position.set(0, 0, 0.08);
 
-      revealRig.object3D.scale.set(1, 0.001, 1);
+      // UKURAN HOLOGRAM 2X
+      // X = lebar, Y = tinggi, Z = kedalaman
+      revealRig.object3D.scale.set(2, 0.001, 2);
 
       goldBase.object3D.scale.set(0.001, 1, 1);
       goldGlow.object3D.scale.set(0.001, 1, 1);
@@ -522,6 +527,7 @@
         holoRig.object3D.position.y = 0.58 * eased;
 
         // 3. VERTICAL REVEAL
+        // Tinggi akhir 2x, lebar tetap 2x
         revealRig.object3D.scale.y =
           Math.max(0.001, 2 * eased);
 
@@ -577,7 +583,6 @@
       if (!markerVisible) return;
 
       video.volume = Number(volume.value);
-      video.muted = !audioUnlocked || video.muted;
 
       try {
 
@@ -591,7 +596,7 @@
 
         console.error("Video playback error:", error);
 
-        // Coba putar tanpa suara jika browser membatasi audio
+        // COBA PUTAR TANPA SUARA
         try {
 
           video.muted = true;
@@ -616,13 +621,13 @@
 
       try {
 
-        // Mulai pemutaran untuk membuka izin audio browser
+        // BUKA IZIN AUDIO BROWSER
         video.muted = false;
         video.volume = Number(volume.value);
 
         const soundPromise = video.play();
 
-        // Mulai MindAR melalui interaksi pengguna
+        // MULAI MINDAR
         const arSystem = scene.systems["mindar-image-system"];
 
         if (!arSystem) {
@@ -637,7 +642,6 @@
         video.currentTime = 0;
 
         audioUnlocked = true;
-        arStarted = true;
 
         audioGate.classList.add("hidden");
 
