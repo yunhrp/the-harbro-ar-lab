@@ -258,7 +258,6 @@
       </a-plane>
 
       <!-- HOLOGRAM RIG -->
-      <!-- Rotasi (0 0 0) membuat hologram berdiri tegak 90 derajat di atas marker -->
       <a-entity
         id="holoRig"
         position="0 0 0"
@@ -316,14 +315,14 @@
               emissiveIntensity: 1.5">
           </a-box>
 
-          <!-- VIDEO VERTICAL 9:16 -->
+          <!-- VIDEO VERTICAL 9:16 (Membalik sumbu Y tekstur video dengan repeat="1 -1") -->
           <a-video
             id="videoScreen"
             src="#adVideo"
             position="0 0 0.01"
             width="0.5625"
             height="1"
-            material="shader: flat; side: double">
+            material="shader: flat; side: double; repeat: 1 -1">
           </a-video>
 
           <!-- GLOW LAYER -->
@@ -618,3 +617,77 @@
         audioGate.classList.add("hidden");
 
         status.textContent = "Kamera aktif - Arahkan ke marker";
+
+        await cameraPromise;
+
+      } catch (error) {
+        console.error("AR start error:", error);
+        status.textContent = "Gagal mengaktifkan kamera. Periksa izin kamera browser.";
+        startButton.disabled = false;
+      }
+    });
+
+    // MUTE / UNMUTE
+    muteButton.addEventListener("click", () => {
+      video.muted = !video.muted;
+
+      muteButton.textContent =
+        video.muted ? "UNMUTE" : "MUTE";
+
+      if (!video.muted && markerVisible) {
+        video.play().catch(error => console.log(error));
+      }
+    });
+
+    // VOLUME
+    volume.addEventListener("input", () => {
+      video.volume = Number(volume.value);
+
+      if (video.volume === 0) {
+        video.muted = true;
+        muteButton.textContent = "UNMUTE";
+      } else {
+        video.muted = false;
+        muteButton.textContent = "MUTE";
+      }
+    });
+
+    // MARKER TERDETEKSI
+    marker.addEventListener("targetFound", () => {
+      markerVisible = true;
+      scanning.textContent = "THE HARBRO MARKER DETECTED";
+      status.textContent = "Golden Hologram Emerging...";
+
+      startAnimation();
+      playAdvertisement();
+    });
+
+    // MARKER HILANG
+    marker.addEventListener("targetLost", () => {
+      markerVisible = false;
+      scanning.textContent = "Mencari marker THE HARBRO...";
+      status.textContent = "Marker tidak terlihat";
+
+      video.pause();
+      video.currentTime = 0;
+
+      resetAnimation();
+    });
+
+    // PERSIAPAN AWAL
+    createParticles();
+    resetAnimation();
+
+    video.addEventListener("error", () => {
+      status.textContent = "Tidak dapat memuat iklan MP4.";
+      console.error("Video error:", video.error);
+    });
+
+    video.addEventListener("loadeddata", () => {
+      console.log("Video iklan berhasil dimuat.");
+    });
+
+  </script>
+
+</body>
+</html>
