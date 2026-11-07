@@ -1,0 +1,631 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>THE HARBRO AR LAB</title>
+
+<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #000;
+  font-family: Arial, sans-serif;
+}
+
+.brand {
+  position: fixed;
+  top: 13px;
+  width: 100%;
+  text-align: center;
+  color: #D6B45C;
+  font-size: 15px;
+  font-weight: bold;
+  letter-spacing: 3px;
+  z-index: 10;
+  pointer-events: none;
+  text-shadow: 0 0 12px #D6B45C;
+}
+
+#status {
+  position: fixed;
+  top: 43px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 14px;
+  border-radius: 20px;
+  background: rgba(0,0,0,.7);
+  color: white;
+  font-size: 12px;
+  z-index: 10;
+  text-align: center;
+  white-space: nowrap;
+}
+
+#startScreen {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  padding: 25px;
+  text-align: center;
+  color: white;
+  background: rgba(0,0,0,.9);
+}
+
+#startScreen h1 {
+  color: #D6B45C;
+  letter-spacing: 3px;
+}
+
+#startScreen p {
+  max-width: 330px;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+button {
+  border: 1px solid #D6B45C;
+  border-radius: 25px;
+  padding: 11px 16px;
+  color: white;
+  background: linear-gradient(135deg,#8c6824,#D6B45C);
+  font-weight: bold;
+}
+
+#controls {
+  position: fixed;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 95%;
+  padding: 9px;
+  border-radius: 30px;
+  background: rgba(0,0,0,.75);
+}
+
+#controls button {
+  font-size: 11px;
+}
+
+#volume {
+  width: 65px;
+  accent-color: #D6B45C;
+}
+
+.a-enter-vr,
+.a-enter-ar {
+  display: none !important;
+}
+</style>
+</head>
+
+<body>
+
+<div class="brand">THE HARBRO AR LAB</div>
+<div id="status">Menyiapkan kamera AR...</div>
+
+<div id="startScreen">
+  <h1>THE HARBRO</h1>
+  <p>
+    Selamat datang di pengalaman Augmented Reality.
+    Aktifkan kamera dan suara, kemudian arahkan kamera
+    HP ke marker Harbro.
+  </p>
+  <button id="startButton">AKTIFKAN AR & SUARA</button>
+  <p style="font-size:11px;color:#ccc">
+    Izinkan akses kamera ketika diminta.
+  </p>
+</div>
+
+<div id="controls">
+  <button id="playButton">PAUSE</button>
+  <button id="muteButton">MUTE</button>
+  <input id="volume" type="range"
+         min="0" max="1" step="0.05" value="1">
+</div>
+
+<a-scene
+  mindar-image="
+    imageTargetSrc: ./assets/targets.mind;
+    autoStart: true;
+    uiLoading: no;
+    uiScanning: no;
+    filterMinCF: 0.0001;
+    filterBeta: 0.001;
+    maxTrack: 1;
+  "
+  color-space="sRGB"
+  renderer="colorManagement: true"
+  vr-mode-ui="enabled: false"
+  device-orientation-permission-ui="enabled: false"
+  embedded
+>
+
+<a-assets timeout="15000">
+  <video
+    id="adVideo"
+    src="./assets/video/iklan.mp4"
+    preload="auto"
+    playsinline
+    webkit-playsinline
+    crossorigin="anonymous"
+  ></video>
+</a-assets>
+
+<a-camera
+  position="0 0 0"
+  look-controls="enabled: false"
+></a-camera>
+
+<a-entity id="marker" mindar-image-target="targetIndex: 0">
+
+  <a-entity
+    id="holoRig"
+    billboard-camera
+    harbro-fx
+    position="0 0 0.08"
+    visible="false"
+  >
+
+    <!-- POSISI AWAL HOLOGRAM -->
+    <a-entity id="riseGroup" position="0 -0.58 0">
+
+      <!-- EFEK 1: GOLDEN LIGHT -->
+      <a-ring
+        id="goldLight"
+        position="0 0 0.045"
+        radius-inner="0.34"
+        radius-outer="0.43"
+        color="#D6B45C"
+        material="
+          shader: flat;
+          transparent: true;
+          opacity: 0.9;
+          side: double;
+        "
+      ></a-ring>
+
+      <!-- EFEK 5: HOLOGRAPHIC GLOW -->
+      <a-plane
+        id="glowPlane"
+        position="0 0 0"
+        width="0.78"
+        height="1.25"
+        material="
+          shader: flat;
+          color: #D6B45C;
+          transparent: true;
+          opacity: 0.18;
+          side: double;
+          depthWrite: false;
+        "
+      ></a-plane>
+
+      <!-- EFEK 3: VERTICAL REVEAL -->
+      <a-entity id="revealRig" position="0 0 0.035">
+
+        <!-- VIDEO 9:16 -->
+        <a-video
+          id="videoScreen"
+          src="#adVideo"
+          position="0 0 0"
+          width="0.5625"
+          height="1"
+          material="
+            shader: flat;
+            side: double;
+          "
+        ></a-video>
+
+        <!-- FRAME EMAS -->
+        <a-box
+          position="0 0.525 0.008"
+          width="0.66"
+          height="0.035"
+          depth="0.025"
+          color="#D6B45C"
+          material="metalness: 0.7; roughness: 0.25"
+        ></a-box>
+
+        <a-box
+          position="0 -0.525 0.008"
+          width="0.66"
+          height="0.035"
+          depth="0.025"
+          color="#D6B45C"
+          material="metalness: 0.7; roughness: 0.25"
+        ></a-box>
+
+        <a-box
+          position="-0.3125 0 0.008"
+          width="0.035"
+          height="1.08"
+          depth="0.025"
+          color="#D6B45C"
+        ></a-box>
+
+        <a-box
+          position="0.3125 0 0.008"
+          width="0.035"
+          height="1.08"
+          depth="0.025"
+          color="#D6B45C"
+        ></a-box>
+
+      </a-entity>
+
+      <!-- EFEK 4: GOLDEN PARTICLES -->
+      <a-entity id="particleRig"></a-entity>
+
+    </a-entity>
+  </a-entity>
+</a-entity>
+
+</a-scene>
+
+<script>
+
+/* BILLBOARD: HOLOGRAM MENGHADAP KAMERA */
+AFRAME.registerComponent('billboard-camera', {
+  tick: function () {
+    const camera = this.el.sceneEl.camera;
+    if (!camera) return;
+
+    const parent = this.el.object3D.parent;
+    if (!parent) return;
+
+    const cameraQ = new THREE.Quaternion();
+    const parentQ = new THREE.Quaternion();
+
+    camera.getWorldQuaternion(cameraQ);
+    parent.getWorldQuaternion(parentQ);
+
+    this.el.object3D.quaternion.copy(
+      parentQ.invert().multiply(cameraQ)
+    );
+  }
+});
+
+
+/* MESIN LIMA EFEK HOLOGRAM */
+AFRAME.registerComponent('harbro-fx', {
+
+  init: function () {
+    this.active = false;
+    this.startTime = 0;
+    this.particles = [];
+
+    this.riseGroup = document.querySelector('#riseGroup');
+    this.revealRig = document.querySelector('#revealRig');
+    this.goldLight = document.querySelector('#goldLight');
+    this.glowPlane = document.querySelector('#glowPlane');
+    this.particleRig = document.querySelector('#particleRig');
+
+    // Membuat 22 partikel emas
+    for (let i = 0; i < 22; i++) {
+
+      const p = document.createElement('a-sphere');
+
+      const x = (Math.random() - 0.5) * 0.85;
+      const y = (Math.random() - 0.5) * 1.35;
+      const z = 0.07 + Math.random() * 0.05;
+
+      const radius = 0.008 + Math.random() * 0.014;
+
+      p.setAttribute('radius', radius);
+      p.setAttribute('color', '#D6B45C');
+
+      p.setAttribute('material',
+        'shader: flat; transparent: true; opacity: 0.85'
+      );
+
+      this.particleRig.appendChild(p);
+
+      this.particles.push({
+        el: p,
+        x: x,
+        y: y,
+        z: z,
+        phase: Math.random() * Math.PI * 2,
+        speed: 0.8 + Math.random() * 1.5
+      });
+    }
+  },
+
+  start: function () {
+    this.active = true;
+    this.startTime = performance.now();
+
+    this.riseGroup.object3D.position.y = -0.58;
+    this.revealRig.object3D.scale.set(1, 0.01, 1);
+
+    this.goldLight.object3D.scale.set(0.1, 0.1, 0.1);
+    this.goldLight.setAttribute('material.opacity', 0.9);
+
+    this.glowPlane.setAttribute('material.opacity', 0.18);
+  },
+
+  stop: function () {
+    this.active = false;
+
+    this.riseGroup.object3D.position.y = -0.58;
+    this.revealRig.object3D.scale.set(1, 0.01, 1);
+
+    this.goldLight.object3D.scale.set(0.1, 0.1, 0.1);
+    this.glowPlane.setAttribute('material.opacity', 0.18);
+
+    this.particles.forEach(p => {
+      p.el.object3D.position.set(p.x, p.y, p.z);
+    });
+  },
+
+  tick: function (time) {
+
+    if (!this.el.object3D.visible) return;
+
+    const elapsed = time * 0.001;
+
+    // EFEK 5: HOLOGRAPHIC GLOW
+    const glow = 0.13 + 0.12 *
+      (0.5 + 0.5 * Math.sin(elapsed * 4));
+
+    this.glowPlane.setAttribute(
+      'material.opacity', glow
+    );
+
+    // EFEK 4: GOLDEN PARTICLES
+    this.particles.forEach(p => {
+
+      const px = p.x +
+        Math.sin(elapsed * p.speed + p.phase) * 0.035;
+
+      const py = p.y +
+        Math.sin(elapsed * 1.8 + p.phase) * 0.08;
+
+      p.el.object3D.position.set(px, py, p.z);
+    });
+
+    if (!this.active) return;
+
+    const t = Math.min(
+      (performance.now() - this.startTime) / 1500,
+      1
+    );
+
+    const ease = 1 - Math.pow(1 - t, 3);
+
+    // EFEK 1: GOLDEN LIGHT
+    const ringScale = 0.1 + ease * 1.8;
+
+    this.goldLight.object3D.scale.set(
+      ringScale, ringScale, 1
+    );
+
+    this.goldLight.setAttribute(
+      'material.opacity', 0.9 * (1 - t)
+    );
+
+    // EFEK 2: VERTICAL RISE
+    this.riseGroup.object3D.position.y =
+      -0.58 + 0.58 * ease;
+
+    // EFEK 3: VERTICAL REVEAL
+    const reveal = Math.max(
+      0.01,
+      Math.min(1, (t - 0.12) / 0.78)
+    );
+
+    const revealEase = 1 - Math.pow(1 - reveal, 3);
+
+    this.revealRig.object3D.scale.set(
+      1, revealEase, 1
+    );
+
+    if (t >= 1) {
+      this.active = false;
+    }
+  }
+});
+
+
+/* REFERENSI ELEMEN */
+const video = document.querySelector('#adVideo');
+const scene = document.querySelector('a-scene');
+const marker = document.querySelector('#marker');
+const holoRig = document.querySelector('#holoRig');
+
+const statusText = document.querySelector('#status');
+const startScreen = document.querySelector('#startScreen');
+
+const startButton = document.querySelector('#startButton');
+const playButton = document.querySelector('#playButton');
+const muteButton = document.querySelector('#muteButton');
+const volumeControl = document.querySelector('#volume');
+
+let audioUnlocked = false;
+let isMuted = false;
+let markerVisible = false;
+
+video.loop = true;
+video.muted = true;
+video.volume = 1;
+
+
+/* AKTIVASI SUARA SATU KALI */
+startButton.addEventListener('click', async () => {
+
+  startButton.disabled = true;
+  startButton.textContent = 'MENGAKTIFKAN...';
+
+  try {
+
+    video.muted = false;
+    video.volume = Number(volumeControl.value);
+
+    await video.play();
+
+    audioUnlocked = true;
+
+    video.pause();
+    video.currentTime = 0;
+
+    startScreen.style.display = 'none';
+
+    statusText.textContent =
+      'Suara aktif. Arahkan kamera ke marker Harbro.';
+
+  } catch (error) {
+
+    video.muted = true;
+    audioUnlocked = false;
+
+    startButton.disabled = false;
+    startButton.textContent = 'COBA AKTIFKAN SUARA LAGI';
+
+    statusText.textContent =
+      'Aktivasi suara gagal. Coba tekan tombol kembali.';
+  }
+});
+
+
+/* MARKER DITEMUKAN */
+marker.addEventListener('targetFound', async () => {
+
+  markerVisible = true;
+
+  statusText.textContent =
+    'MARKER TERDETEKSI - HOLOGRAM AKTIF';
+
+  holoRig.setAttribute('visible', true);
+
+  const fx = holoRig.components['harbro-fx'];
+
+  if (fx) fx.start();
+
+  try {
+
+    video.muted = !audioUnlocked || isMuted;
+    video.volume = Number(volumeControl.value);
+
+    await video.play();
+
+    playButton.textContent = 'PAUSE';
+
+  } catch (error) {
+
+    statusText.textContent =
+      'Hologram aktif. Tekan PLAY untuk memulai video.';
+  }
+});
+
+
+/* MARKER HILANG */
+marker.addEventListener('targetLost', () => {
+
+  markerVisible = false;
+
+  statusText.textContent =
+    'Marker tidak terlihat. Cari kembali marker.';
+
+  video.pause();
+  video.currentTime = 0;
+
+  playButton.textContent = 'PLAY';
+
+  const fx = holoRig.components['harbro-fx'];
+
+  if (fx) fx.stop();
+
+  holoRig.setAttribute('visible', false);
+});
+
+
+/* PLAY / PAUSE */
+playButton.addEventListener('click', async () => {
+
+  if (video.paused) {
+
+    try {
+
+      if (!audioUnlocked) {
+        video.muted = true;
+      } else {
+        video.muted = isMuted;
+      }
+
+      await video.play();
+
+      playButton.textContent = 'PAUSE';
+
+    } catch (error) {
+      statusText.textContent = 'Video belum bisa diputar.';
+    }
+
+  } else {
+
+    video.pause();
+    playButton.textContent = 'PLAY';
+  }
+});
+
+
+/* MUTE */
+muteButton.addEventListener('click', () => {
+
+  isMuted = !isMuted;
+
+  video.muted = isMuted;
+
+  muteButton.textContent =
+    isMuted ? 'UNMUTE' : 'MUTE';
+});
+
+
+/* VOLUME */
+volumeControl.addEventListener('input', () => {
+
+  video.volume = Number(volumeControl.value);
+});
+
+
+/* STATUS KAMERA */
+scene.addEventListener('arReady', () => {
+
+  statusText.textContent =
+    'Kamera siap. Silakan scan marker.';
+});
+
+scene.addEventListener('arError', () => {
+
+  statusText.textContent =
+    'Kamera gagal dibuka. Periksa izin kamera.';
+});
+
+
+/* VIDEO SELESAI */
+video.addEventListener('ended', () => {
+
+  playButton.textContent = 'PLAY';
+});
+
+</script>
+
+</body>
+</html>
