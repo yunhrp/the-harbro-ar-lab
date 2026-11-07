@@ -13,9 +13,7 @@
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -105,13 +103,9 @@
       text-align: center;
     }
 
-    #audioGate.hidden {
-      display: none;
-    }
+    #audioGate.hidden { display: none; }
 
-    .gateContent {
-      max-width: 380px;
-    }
+    .gateContent { max-width: 380px; }
 
     .gateContent h2 {
       color: #D6B45C;
@@ -149,29 +143,20 @@
 
   <div id="header">THE HARBRO AR LAB</div>
 
-  <div id="status">
-    Menyiapkan kamera AR...
-  </div>
+  <div id="status">Menyiapkan kamera AR...</div>
 
-  <div id="scanning">
-    Arahkan kamera ke marker THE HARBRO
-  </div>
+  <div id="scanning">Arahkan kamera ke marker THE HARBRO</div>
 
   <!-- AKTIVASI SUARA DAN KAMERA -->
   <div id="audioGate">
     <div class="gateContent">
       <h2>THE HARBRO</h2>
-
       <p>PREMIUM HOLOGRAPHIC ADVERTISING</p>
-
       <p>
         Aktifkan pengalaman Augmented Reality.
         Izinkan akses kamera dan suara ketika diminta.
       </p>
-
-      <button id="startAR">
-        AKTIFKAN AR & SUARA
-      </button>
+      <button id="startAR">AKTIFKAN AR & SUARA</button>
     </div>
   </div>
 
@@ -180,13 +165,7 @@
     <button id="mute">MUTE</button>
     <label style="color:white">
       Volume
-      <input
-        id="volume"
-        type="range"
-        min="0"
-        max="1"
-        step="0.1"
-        value="1">
+      <input id="volume" type="range" min="0" max="1" step="0.1" value="1">
     </label>
   </div>
 
@@ -217,19 +196,16 @@
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false">
 
-    <a-camera
-      position="0 0 0"
-      look-controls="enabled: false">
-    </a-camera>
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
     <!-- IMAGE TARGET -->
     <a-entity id="marker" mindar-image-target="targetIndex: 0">
 
-      <!-- 1. GOLDEN LIGHT (Alas di permukaan marker meja) -->
+      <!-- 1. GOLDEN LIGHT: rata di permukaan marker (marker datar di meja) -->
       <a-plane
         id="goldBase"
         position="0 0 0.01"
-        rotation="-90 0 0"
+        rotation="0 0 0"
         width="0.85"
         height="0.12"
         material="
@@ -245,7 +221,7 @@
       <a-plane
         id="goldGlow"
         position="0 0 0.005"
-        rotation="-90 0 0"
+        rotation="0 0 0"
         width="1"
         height="0.25"
         material="
@@ -257,11 +233,11 @@
           side: double">
       </a-plane>
 
-      <!-- HOLOGRAM RIG -->
+      <!-- HOLOGRAM RIG: rotasi 90 pada sumbu X agar hologram BERDIRI TEGAK dari marker -->
       <a-entity
         id="holoRig"
         position="0 0 0"
-        rotation="0 0 0"
+        rotation="90 0 0"
         visible="false">
 
         <!-- VERTICAL REVEAL -->
@@ -273,10 +249,7 @@
             width="0.66"
             height="0.025"
             depth="0.025"
-            material="
-              color: #D6B45C;
-              emissive: #D6B45C;
-              emissiveIntensity: 1.5">
+            material="color: #D6B45C; emissive: #D6B45C; emissiveIntensity: 1.5">
           </a-box>
 
           <!-- GOLD FRAME: BAWAH -->
@@ -285,10 +258,7 @@
             width="0.66"
             height="0.025"
             depth="0.025"
-            material="
-              color: #D6B45C;
-              emissive: #D6B45C;
-              emissiveIntensity: 1.5">
+            material="color: #D6B45C; emissive: #D6B45C; emissiveIntensity: 1.5">
           </a-box>
 
           <!-- GOLD FRAME: KIRI -->
@@ -297,10 +267,7 @@
             width="0.025"
             height="1.02"
             depth="0.025"
-            material="
-              color: #D6B45C;
-              emissive: #D6B45C;
-              emissiveIntensity: 1.5">
+            material="color: #D6B45C; emissive: #D6B45C; emissiveIntensity: 1.5">
           </a-box>
 
           <!-- GOLD FRAME: KANAN -->
@@ -309,21 +276,29 @@
             width="0.025"
             height="1.02"
             depth="0.025"
-            material="
-              color: #D6B45C;
-              emissive: #D6B45C;
-              emissiveIntensity: 1.5">
+            material="color: #D6B45C; emissive: #D6B45C; emissiveIntensity: 1.5">
           </a-box>
 
-          <!-- VIDEO VERTICAL 9:16 (Diputar 180 derajat pada sumbu Z agar tidak terbalik) -->
+          <!-- VIDEO DEPAN 9:16 (rotasi 0 = gambar normal, tidak terbalik) -->
           <a-video
             id="videoScreen"
             src="#adVideo"
             position="0 0 0.01"
-            rotation="0 0 180"
+            rotation="0 0 0"
             width="0.5625"
             height="1"
-            material="shader: flat; side: double">
+            material="shader: flat; side: front">
+          </a-video>
+
+          <!-- VIDEO BELAKANG (agar dari belakang tidak tampak seperti cermin) -->
+          <a-video
+            id="videoScreenBack"
+            src="#adVideo"
+            position="0 0 -0.01"
+            rotation="0 180 0"
+            width="0.5625"
+            height="1"
+            material="shader: flat; side: front">
           </a-video>
 
           <!-- GLOW LAYER -->
@@ -344,10 +319,11 @@
         </a-entity>
       </a-entity>
 
-      <!-- GOLDEN PARTICLES -->
+      <!-- GOLDEN PARTICLES: dirotasi sama dengan hologram agar naik ke atas -->
       <a-entity
         id="particleRig"
         position="0 0 0"
+        rotation="90 0 0"
         visible="false">
       </a-entity>
 
@@ -379,7 +355,11 @@
     const muteButton = document.querySelector("#mute");
     const volume = document.querySelector("#volume");
 
-    let audioUnlocked = false;
+    // UKURAN HOLOGRAM (ubah di sini jika ingin lebih besar / kecil)
+    const HOLO_SCALE = 1.2;
+    // Tinggi pusat hologram dari permukaan marker (agar bagian bawah tepat di atas marker)
+    const HOLO_LIFT = 0.51 * HOLO_SCALE + 0.03;
+
     let markerVisible = false;
     let animationRunning = false;
     let animationId = null;
@@ -408,13 +388,7 @@
         const radius = 0.004 + Math.random() * 0.008;
 
         p.setAttribute("radius", radius);
-
-        p.setAttribute("position", {
-          x: x,
-          y: y,
-          z: z
-        });
-
+        p.setAttribute("position", { x: x, y: y, z: z });
         p.setAttribute("material", {
           color: "#FFD76A",
           emissive: "#D6B45C",
@@ -445,9 +419,11 @@
 
       animationRunning = false;
 
+      // Posisi awal: di permukaan marker
       holoRig.object3D.position.set(0, 0, 0);
 
-      revealRig.object3D.scale.set(2, 0.001, 2);
+      // Awal: tipis (belum terbuka)
+      revealRig.object3D.scale.set(HOLO_SCALE, 0.001, HOLO_SCALE);
 
       goldBase.object3D.scale.set(0.001, 1, 1);
       goldGlow.object3D.scale.set(0.001, 1, 1);
@@ -485,14 +461,10 @@
       function animate(now) {
         if (!animationRunning || !markerVisible) return;
 
-        const progress = Math.min(
-          (now - startTime) / duration,
-          1
-        );
-
+        const progress = Math.min((now - startTime) / duration, 1);
         const eased = easeOutCubic(progress);
 
-        // 1. GOLDEN LIGHT
+        // 1. GOLDEN LIGHT (alas di marker)
         const lightSize = Math.min(progress * 2.2, 1);
 
         goldBase.object3D.scale.x = 0.001 + lightSize;
@@ -503,24 +475,14 @@
             ? 0.9
             : 0.9 * (1 - (progress - 0.7) / 0.3);
 
-        goldBase.setAttribute(
-          "material",
-          "opacity",
-          lightOpacity
-        );
+        goldBase.setAttribute("material", "opacity", lightOpacity);
+        goldGlow.setAttribute("material", "opacity", lightOpacity * 0.25);
 
-        goldGlow.setAttribute(
-          "material",
-          "opacity",
-          lightOpacity * 0.25
-        );
+        // 2. HOLOGRAM NAIK KE ATAS (sumbu Z marker = arah atas dari meja)
+        holoRig.object3D.position.z = HOLO_LIFT * eased;
 
-        // 2. VERTICAL RISE (Naik di sumbu Y)
-        holoRig.object3D.position.y = 0.55 * eased;
-
-        // 3. VERTICAL REVEAL (Membuka ke atas)
-        revealRig.object3D.scale.y =
-          Math.max(0.001, 2 * eased);
+        // 3. HOLOGRAM MEMBUKA KE ATAS (tinggi membesar)
+        revealRig.object3D.scale.y = Math.max(0.001, HOLO_SCALE * eased);
 
         // 4. GOLDEN PARTICLES
         const elapsed = (now - startTime) / 1000;
@@ -529,22 +491,12 @@
           const y = (p.y + elapsed * p.speed) % 1.3;
           const x = p.x + Math.sin(elapsed * 2 + p.phase) * 0.025;
 
-          p.element.object3D.position.set(
-            x,
-            y,
-            p.z
-          );
+          p.element.object3D.position.set(x, y, p.z);
         });
 
         // 5. HOLOGRAPHIC GLOW
-        const glowOpacity =
-          0.18 + Math.sin(now * 0.004) * 0.12;
-
-        screenGlow.setAttribute(
-          "material",
-          "opacity",
-          glowOpacity
-        );
+        const glowOpacity = 0.18 + Math.sin(now * 0.004) * 0.12;
+        screenGlow.setAttribute("material", "opacity", glowOpacity);
 
         if (progress >= 1) {
           animationRunning = false;
@@ -614,7 +566,6 @@
         video.pause();
         video.currentTime = 0;
 
-        audioUnlocked = true;
         audioGate.classList.add("hidden");
 
         status.textContent = "Kamera aktif - Arahkan ke marker";
@@ -632,8 +583,7 @@
     muteButton.addEventListener("click", () => {
       video.muted = !video.muted;
 
-      muteButton.textContent =
-        video.muted ? "UNMUTE" : "MUTE";
+      muteButton.textContent = video.muted ? "UNMUTE" : "MUTE";
 
       if (!video.muted && markerVisible) {
         video.play().catch(error => console.log(error));
