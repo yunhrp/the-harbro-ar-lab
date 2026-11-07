@@ -1,1 +1,1259 @@
 
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <title>THE HARBRO AR LAB</title>
+
+  <!-- A-FRAME -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+
+  <!-- MINDAR -->
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+  <!-- REAL TIME BLACK BACKGROUND REMOVAL SHADER -->
+  <script>
+    AFRAME.registerShader('harbro-chroma', {
+      schema: {
+        src: {type: 'map', is: 'uniform'},
+        threshold: {type: 'number', is: 'uniform', default: 0.25},
+        softness: {type: 'number', is: 'uniform', default: 0.15},
+        repeat: {type: 'vec2', is: 'uniform', default: {x: 1, y: 1}},
+        offset: {type: 'vec2', is: 'uniform', default: {x: 0, y: 0}}
+      },
+
+      vertexShader: `
+        varying vec2 vUv;
+
+        void main() {
+          vUv = uv;
+
+          gl_Position =
+            projectionMatrix *
+            modelViewMatrix *
+            vec4(position, 1.0);
+        }
+      `,
+
+      fragmentShader: `
+        uniform sampler2D src;
+        uniform float threshold;
+        uniform float softness;
+        uniform vec2 repeat;
+        uniform vec2 offset;
+
+        varying vec2 vUv;
+
+        void main() {
+
+          vec2 uv = vUv * repeat + offset;
+
+          vec4 color = texture2D(src, uv);
+
+          // Brightness detection
+          float brightness = max(
+            color.r,
+            max(color.g, color.b)
+          );
+
+          // Black removal threshold
+          float edge = max(softness, 0.001);
+
+          float alpha = smoothstep(
+            threshold,
+            threshold + edge,
+            brightness
+          );
+
+          // Preserve original video colors
+          gl_FragColor = vec4(
+            color.rgb,
+            color.a * alpha
+          );
+        }
+      `
+    });
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      background: #071525;
+    }
+
+    #header {
+      position: fixed;
+      top: 12px;
+      width: 100%;
+      z-index: 20;
+      text-align: center;
+      color: #D6B45C;
+      font-size: 21px;
+      font-weight: bold;
+      text-shadow: 1px 2px 4px #000;
+      pointer-events: none;
+    }
+
+    #status {
+      position: fixed;
+      top: 48px;
+      width: 100%;
+      z-index: 20;
+      text-align: center;
+      color: white;
+      font-size: 13px;
+      text-shadow: 1px 2px 4px #000;
+      pointer-events: none;
+    }
+
+    #scanning {
+      position: fixed;
+      bottom: 150px;
+      width: 100%;
+      z-index: 20;
+      text-align: center;
+      color: white;
+      font-size: 13px;
+      text-shadow: 1px 2px 4px #000;
+      pointer-events: none;
+    }
+
+    /* BLACK REMOVAL PANEL */
+    #keyPanel {
+      position: fixed;
+      top: 76px;
+      left: 10px;
+      width: 235px;
+      max-width: calc(100vw - 20px);
+      z-index: 35;
+
+      padding: 13px;
+      border: 1px solid rgba(214,180,92,0.7);
+      border-radius: 12px;
+
+      background: rgba(5,17,32,0.90);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+
+      color: white;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.4);
+    }
+
+    #keyPanel h3 {
+      margin: 0 0 12px;
+      color: #D6B45C;
+      font-size: 14px;
+      letter-spacing: 0.6px;
+    }
+
+    .sliderGroup {
+      margin-bottom: 12px;
+    }
+
+    .sliderTitle {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 7px;
+      font-size: 11px;
+    }
+
+    .sliderTitle strong {
+      color: #FFD76A;
+      font-size: 12px;
+    }
+
+    .keySlider {
+      width: 100%;
+      height: 6px;
+      accent-color: #D6B45C;
+      cursor: pointer;
+    }
+
+    #resetKey {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #D6B45C;
+      border-radius: 7px;
+      background: transparent;
+      color: #FFD76A;
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    #keyInfo {
+      margin-top: 8px;
+      color: #b8c7d9;
+      font-size: 10px;
+      line-height: 1.4;
+    }
+
+    /* BOTTOM CONTROLS */
+    #controls {
+      position: fixed;
+      bottom: 15px;
+      left: 0;
+      width: 100%;
+      z-index: 30;
+
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 8px;
+    }
+
+    button {
+      border: none;
+      border-radius: 8px;
+      padding: 11px 14px;
+      background: #1677FF;
+      color: white;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button.orient {
+      background: #A77B25;
+    }
+
+    #volume {
+      width: 85px;
+      vertical-align: middle;
+    }
+
+    #audioGate {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 25px;
+
+      background: rgba(5,16,30,0.94);
+      color: white;
+      text-align: center;
+    }
+
+    #audioGate.hidden {
+      display: none;
+    }
+
+    .gateContent {
+      max-width: 380px;
+    }
+
+    .gateContent h2 {
+      color: #D6B45C;
+      letter-spacing: 2px;
+      font-size: 27px;
+    }
+
+    #startAR {
+      margin-top: 15px;
+      padding: 16px 25px;
+      background: linear-gradient(135deg,#D6B45C,#A77B25);
+      color: #111;
+      font-size: 14px;
+    }
+
+    /* VIDEO SOURCE */
+    #adVideo {
+      position: fixed;
+      left: -1000px;
+      top: 0;
+      width: 320px;
+      height: 568px;
+      opacity: 0.01;
+      pointer-events: none;
+    }
+
+    .a-canvas {
+      position: fixed !important;
+      inset: 0 !important;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="header">THE HARBRO AR LAB</div>
+
+  <div id="status">Menyiapkan kamera AR...</div>
+
+  <div id="scanning">
+    Arahkan kamera ke marker THE HARBRO
+  </div>
+
+  <!-- BLACK BACKGROUND REMOVAL CONTROL -->
+  <div id="keyPanel">
+
+    <h3>BLACK BACKGROUND REMOVAL</h3>
+
+    <div class="sliderGroup">
+      <div class="sliderTitle">
+        <span>BLACK THRESHOLD</span>
+        <strong id="thresholdValue">25%</strong>
+      </div>
+
+      <input
+        id="thresholdSlider"
+        class="keySlider"
+        type="range"
+        min="0"
+        max="100"
+        value="25"
+        step="1">
+    </div>
+
+    <div class="sliderGroup">
+      <div class="sliderTitle">
+        <span>EDGE SOFTNESS</span>
+        <strong id="softnessValue">15%</strong>
+      </div>
+
+      <input
+        id="softnessSlider"
+        class="keySlider"
+        type="range"
+        min="0"
+        max="100"
+        value="15"
+        step="1">
+    </div>
+
+    <button id="resetKey">
+      RESET PENGATURAN
+    </button>
+
+    <div id="keyInfo">
+      Geser slider untuk mengatur transparansi
+      background hitam secara langsung.
+    </div>
+
+  </div>
+
+  <!-- AUDIO GATE -->
+  <div id="audioGate">
+
+    <div class="gateContent">
+
+      <h2>THE HARBRO</h2>
+
+      <p>PREMIUM HOLOGRAPHIC ADVERTISING</p>
+
+      <p>
+        Aktifkan pengalaman Augmented Reality.
+        Izinkan akses kamera dan suara ketika diminta.
+      </p>
+
+      <button id="startAR">
+        AKTIFKAN AR & SUARA
+      </button>
+
+    </div>
+
+  </div>
+
+  <!-- BOTTOM CONTROLS -->
+  <div id="controls">
+
+    <button id="rot180" class="orient">
+      PUTAR 180°
+    </button>
+
+    <button id="flipV" class="orient">
+      BALIK ↕
+    </button>
+
+    <button id="flipH" class="orient">
+      BALIK ↔
+    </button>
+
+    <button id="mute">
+      MUTE
+    </button>
+
+    <label style="color:white;font-size:12px">
+      Volume
+      <input
+        id="volume"
+        type="range"
+        min="0"
+        max="1"
+        step="0.1"
+        value="1">
+    </label>
+
+  </div>
+
+  <!-- VIDEO IKLAN -->
+  <video
+    id="adVideo"
+    src="./assets/video/iklan.mp4"
+    preload="auto"
+    loop
+    playsinline
+    webkit-playsinline
+    crossorigin="anonymous">
+  </video>
+
+  <!-- MINDAR AR SCENE -->
+  <a-scene
+    id="arScene"
+    mindar-image="
+      imageTargetSrc: ./assets/targets.mind;
+      autoStart: false;
+      maxTrack: 1;
+      filterMinCF: 0.0001;
+      filterBeta: 0.001"
+    color-space="sRGB"
+    renderer="
+      colorManagement: true;
+      physicallyCorrectLights: true"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false">
+
+    <a-camera
+      position="0 0 0"
+      look-controls="enabled: false">
+    </a-camera>
+
+    <!-- IMAGE TARGET -->
+    <a-entity
+      id="marker"
+      mindar-image-target="targetIndex: 0">
+
+      <!-- GOLDEN LIGHT -->
+      <a-plane
+        id="goldBase"
+        position="0 0 0.01"
+        width="0.85"
+        height="0.12"
+        material="
+          color: #FFD76A;
+          emissive: #FFD000;
+          emissiveIntensity: 2;
+          transparent: true;
+          opacity: 0;
+          side: double">
+      </a-plane>
+
+      <!-- GOLDEN GLOW -->
+      <a-plane
+        id="goldGlow"
+        position="0 0 0.005"
+        width="1"
+        height="0.25"
+        material="
+          color: #D6B45C;
+          emissive: #D6B45C;
+          emissiveIntensity: 2;
+          transparent: true;
+          opacity: 0;
+          side: double">
+      </a-plane>
+
+      <!-- HOLOGRAM RIG -->
+      <a-entity
+        id="holoRig"
+        position="0 0 0"
+        rotation="90 0 0"
+        visible="false">
+
+        <a-entity id="revealRig">
+
+          <!-- VIDEO DEPAN -->
+          <a-entity
+            id="frontWrap"
+            position="0 0 0.01">
+
+            <a-plane
+              id="videoScreen"
+              width="0.5625"
+              height="1"
+              material="
+                shader: harbro-chroma;
+                src: #adVideo;
+                threshold: 0.25;
+                softness: 0.15;
+                transparent: true;
+                side: double;
+                depthWrite: false">
+            </a-plane>
+
+          </a-entity>
+
+          <!-- VIDEO BELAKANG -->
+          <a-entity
+            id="backWrap"
+            position="0 0 -0.01"
+            rotation="0 180 0">
+
+            <a-plane
+              id="videoScreenBack"
+              width="0.5625"
+              height="1"
+              material="
+                shader: harbro-chroma;
+                src: #adVideo;
+                threshold: 0.25;
+                softness: 0.15;
+                transparent: true;
+                side: double;
+                depthWrite: false">
+            </a-plane>
+
+          </a-entity>
+
+          <!-- GLOW LAYER -->
+          <a-plane
+            id="screenGlow"
+            position="0 0 0"
+            width="0.59"
+            height="1.04"
+            material="
+              color: #55B9F2;
+              emissive: #55B9F2;
+              emissiveIntensity: 1.5;
+              transparent: true;
+              opacity: 0;
+              side: double">
+          </a-plane>
+
+        </a-entity>
+      </a-entity>
+
+      <!-- GOLDEN PARTICLES -->
+      <a-entity
+        id="particleRig"
+        position="0 0 0"
+        rotation="90 0 0"
+        visible="false">
+      </a-entity>
+
+    </a-entity>
+
+  </a-scene>
+
+  <script>
+
+    const video = document.querySelector("#adVideo");
+    const scene = document.querySelector("#arScene");
+    const marker = document.querySelector("#marker");
+
+    const status = document.querySelector("#status");
+    const scanning = document.querySelector("#scanning");
+
+    const holoRig = document.querySelector("#holoRig");
+    const revealRig = document.querySelector("#revealRig");
+
+    const goldBase = document.querySelector("#goldBase");
+    const goldGlow = document.querySelector("#goldGlow");
+    const screenGlow = document.querySelector("#screenGlow");
+
+    const particleRig = document.querySelector("#particleRig");
+
+    const videoFront = document.querySelector("#videoScreen");
+    const videoBack = document.querySelector("#videoScreenBack");
+
+    const audioGate = document.querySelector("#audioGate");
+    const startButton = document.querySelector("#startAR");
+
+    const muteButton = document.querySelector("#mute");
+    const volume = document.querySelector("#volume");
+
+    // ===== BLACK REMOVAL CONTROLS =====
+
+    const thresholdSlider =
+      document.querySelector("#thresholdSlider");
+
+    const softnessSlider =
+      document.querySelector("#softnessSlider");
+
+    const thresholdValue =
+      document.querySelector("#thresholdValue");
+
+    const softnessValue =
+      document.querySelector("#softnessValue");
+
+    const resetKey =
+      document.querySelector("#resetKey");
+
+    let blackThreshold = 0.25;
+    let edgeSoftness = 0.15;
+
+    function applyBlackRemoval() {
+
+      blackThreshold =
+        Number(thresholdSlider.value) / 100;
+
+      edgeSoftness =
+        Number(softnessSlider.value) / 100;
+
+      thresholdValue.textContent =
+        thresholdSlider.value + "%";
+
+      softnessValue.textContent =
+        softnessSlider.value + "%";
+
+      [videoFront, videoBack].forEach(el => {
+
+        el.setAttribute(
+          "material",
+          "threshold",
+          blackThreshold
+        );
+
+        el.setAttribute(
+          "material",
+          "softness",
+          edgeSoftness
+        );
+
+      });
+
+    }
+
+    thresholdSlider.addEventListener(
+      "input",
+      applyBlackRemoval
+    );
+
+    softnessSlider.addEventListener(
+      "input",
+      applyBlackRemoval
+    );
+
+    resetKey.addEventListener("click", () => {
+
+      thresholdSlider.value = 25;
+      softnessSlider.value = 15;
+
+      applyBlackRemoval();
+
+    });
+
+    // ===== HOLOGRAM SIZE =====
+
+    const HOLO_SCALE = 1.2;
+    const HOLO_LIFT = 0.5 * HOLO_SCALE + 0.03;
+
+    // ===== VIDEO CROP =====
+
+    const CROP = 1.0;
+
+    function applyCrop() {
+
+      const offset = (1 - CROP) / 2;
+
+      [videoFront, videoBack].forEach(el => {
+
+        el.setAttribute(
+          "material",
+          "repeat",
+          CROP + " " + CROP
+        );
+
+        el.setAttribute(
+          "material",
+          "offset",
+          offset + " " + offset
+        );
+
+      });
+
+    }
+
+    // ===== VIDEO ORIENTATION =====
+
+    let vRot = 0;
+    let vFlipX = 1;
+    let vFlipY = 1;
+
+    try {
+
+      const saved = JSON.parse(
+        localStorage.getItem("harbroVideoOrient")
+      );
+
+      if (saved) {
+
+        vRot = saved.vRot;
+        vFlipX = saved.vFlipX;
+        vFlipY = saved.vFlipY;
+
+      }
+
+    } catch (e) {}
+
+    function applyVideoOrientation() {
+
+      [videoFront, videoBack].forEach(el => {
+
+        if (!el.object3D) return;
+
+        el.object3D.rotation.z =
+          THREE.MathUtils.degToRad(vRot);
+
+        el.object3D.scale.set(
+          vFlipX,
+          vFlipY,
+          1
+        );
+
+      });
+
+      try {
+
+        localStorage.setItem(
+          "harbroVideoOrient",
+          JSON.stringify({
+            vRot,
+            vFlipX,
+            vFlipY
+          })
+        );
+
+      } catch (e) {}
+
+    }
+
+    document.querySelector("#rot180")
+      .addEventListener("click", () => {
+
+        vRot = vRot === 0 ? 180 : 0;
+
+        applyVideoOrientation();
+
+      });
+
+    document.querySelector("#flipV")
+      .addEventListener("click", () => {
+
+        vFlipY = -vFlipY;
+
+        applyVideoOrientation();
+
+      });
+
+    document.querySelector("#flipH")
+      .addEventListener("click", () => {
+
+        vFlipX = -vFlipX;
+
+        applyVideoOrientation();
+
+      });
+
+    scene.addEventListener("loaded", () => {
+
+      applyVideoOrientation();
+      applyCrop();
+      applyBlackRemoval();
+
+    });
+
+    // ===== ANIMATION VARIABLES =====
+
+    let markerVisible = false;
+    let animationRunning = false;
+    let animationId = null;
+
+    let particles = [];
+
+    video.muted = true;
+    video.volume = 1;
+
+    function easeOutCubic(t) {
+
+      return 1 - Math.pow(1 - t, 3);
+
+    }
+
+    // ===== CREATE GOLD PARTICLES =====
+
+    function createParticles() {
+
+      if (particles.length > 0) return;
+
+      for (let i = 0; i < 22; i++) {
+
+        const p = document.createElement("a-sphere");
+
+        const x =
+          (Math.random() - 0.5) * 0.85;
+
+        const y =
+          Math.random() * 1.2;
+
+        const z =
+          (Math.random() - 0.5) * 0.1;
+
+        const radius =
+          0.004 + Math.random() * 0.008;
+
+        p.setAttribute("radius", radius);
+
+        p.setAttribute("position", {
+          x: x,
+          y: y,
+          z: z
+        });
+
+        p.setAttribute("material", {
+          color: "#FFD76A",
+          emissive: "#D6B45C",
+          emissiveIntensity: 2,
+          transparent: true,
+          opacity: 0.9
+        });
+
+        particleRig.appendChild(p);
+
+        particles.push({
+
+          element: p,
+          x: x,
+          y: y,
+          z: z,
+
+          speed: 0.15 + Math.random() * 0.3,
+
+          phase: Math.random() * 6.28
+
+        });
+
+      }
+
+    }
+
+    // ===== RESET HOLOGRAM =====
+
+    function resetAnimation() {
+
+      if (animationId) {
+
+        cancelAnimationFrame(animationId);
+        animationId = null;
+
+      }
+
+      animationRunning = false;
+
+      holoRig.object3D.position.set(0, 0, 0);
+
+      revealRig.object3D.scale.set(
+        HOLO_SCALE,
+        0.001,
+        HOLO_SCALE
+      );
+
+      goldBase.object3D.scale.set(
+        0.001, 1, 1
+      );
+
+      goldGlow.object3D.scale.set(
+        0.001, 1, 1
+      );
+
+      goldBase.setAttribute(
+        "material", "opacity", 0
+      );
+
+      goldGlow.setAttribute(
+        "material", "opacity", 0
+      );
+
+      screenGlow.setAttribute(
+        "material", "opacity", 0
+      );
+
+      particles.forEach(p => {
+
+        p.element.setAttribute("visible", false);
+
+      });
+
+      holoRig.setAttribute("visible", false);
+      particleRig.setAttribute("visible", false);
+
+    }
+
+    // ===== HOLOGRAM EMERGING ANIMATION =====
+
+    function startAnimation() {
+
+      if (animationRunning) return;
+
+      resetAnimation();
+
+      animationRunning = true;
+
+      holoRig.setAttribute("visible", true);
+      particleRig.setAttribute("visible", true);
+
+      particles.forEach(p => {
+
+        p.element.setAttribute("visible", true);
+
+      });
+
+      const duration = 3200;
+      const startTime = performance.now();
+
+      function animate(now) {
+
+        if (!animationRunning || !markerVisible) return;
+
+        const progress = Math.min(
+          (now - startTime) / duration,
+          1
+        );
+
+        const eased = easeOutCubic(progress);
+
+        // 1. GOLDEN LIGHT
+
+        const lightSize = Math.min(
+          progress * 2.2,
+          1
+        );
+
+        goldBase.object3D.scale.x =
+          0.001 + lightSize;
+
+        goldGlow.object3D.scale.x =
+          0.001 + lightSize;
+
+        const lightOpacity =
+          progress < 0.7
+            ? 0.9
+            : 0.9 * (1 - (progress - 0.7) / 0.3);
+
+        goldBase.setAttribute(
+          "material",
+          "opacity",
+          lightOpacity
+        );
+
+        goldGlow.setAttribute(
+          "material",
+          "opacity",
+          lightOpacity * 0.25
+        );
+
+        // 2. RISE UP
+
+        holoRig.object3D.position.z =
+          HOLO_LIFT * eased;
+
+        // 3. REVEAL VIDEO
+
+        revealRig.object3D.scale.y =
+          Math.max(
+            0.001,
+            HOLO_SCALE * eased
+          );
+
+        // 4. GOLD PARTICLES
+
+        const elapsed =
+          (now - startTime) / 1000;
+
+        particles.forEach(p => {
+
+          const y =
+            (p.y + elapsed * p.speed) % 1.3;
+
+          const x =
+            p.x +
+            Math.sin(elapsed * 2 + p.phase) * 0.025;
+
+          p.element.object3D.position.set(
+            x, y, p.z
+          );
+
+        });
+
+        // 5. BLUE GLOW
+
+        const glowOpacity =
+          0.18 + Math.sin(now * 0.004) * 0.12;
+
+        screenGlow.setAttribute(
+          "material",
+          "opacity",
+          glowOpacity
+        );
+
+        if (progress >= 1) {
+
+          animationRunning = false;
+          animationId = null;
+
+          goldBase.setAttribute(
+            "material", "opacity", 0
+          );
+
+          goldGlow.setAttribute(
+            "material", "opacity", 0
+          );
+
+          status.textContent =
+            "THE HARBRO HOLOGRAM ACTIVE";
+
+          return;
+
+        }
+
+        animationId =
+          requestAnimationFrame(animate);
+
+      }
+
+      animationId =
+        requestAnimationFrame(animate);
+
+    }
+
+    // ===== PLAY ADVERTISEMENT =====
+
+    async function playAdvertisement() {
+
+      if (!markerVisible) return;
+
+      video.volume = Number(volume.value);
+
+      try {
+
+        await video.play();
+
+        status.textContent = video.muted
+          ? "HOLOGRAM ACTIVE - SOUND MUTED"
+          : "HOLOGRAPHIC ADVERTISEMENT PLAYING";
+
+      } catch (error) {
+
+        console.error(
+          "Video playback error:",
+          error
+        );
+
+        try {
+
+          video.muted = true;
+
+          await video.play();
+
+          status.textContent =
+            "VIDEO PLAYING - SOUND MUTED";
+
+        } catch (secondError) {
+
+          status.textContent =
+            "Video gagal diputar. Periksa file MP4.";
+
+          console.error(secondError);
+
+        }
+
+      }
+
+    }
+
+    // ===== START CAMERA AND AUDIO =====
+
+    startButton.addEventListener(
+      "click",
+      async () => {
+
+        startButton.disabled = true;
+
+        status.textContent =
+          "Mengaktifkan kamera dan suara...";
+
+        try {
+
+          video.muted = false;
+
+          video.volume =
+            Number(volume.value);
+
+          const soundPromise = video.play();
+
+          const arSystem =
+            scene.systems["mindar-image-system"];
+
+          if (!arSystem) {
+
+            throw new Error(
+              "MindAR belum siap. Muat ulang halaman."
+            );
+
+          }
+
+          const cameraPromise = arSystem.start();
+
+          await soundPromise;
+
+          video.pause();
+          video.currentTime = 0;
+
+          audioGate.classList.add("hidden");
+
+          status.textContent =
+            "Kamera aktif - Arahkan ke marker";
+
+          await cameraPromise;
+
+        } catch (error) {
+
+          console.error(
+            "AR start error:",
+            error
+          );
+
+          status.textContent =
+            "Gagal mengaktifkan kamera. Periksa izin kamera browser.";
+
+          startButton.disabled = false;
+
+        }
+
+      }
+    );
+
+    // ===== MUTE / UNMUTE =====
+
+    muteButton.addEventListener("click", () => {
+
+      video.muted = !video.muted;
+
+      muteButton.textContent =
+        video.muted ? "UNMUTE" : "MUTE";
+
+      if (!video.muted && markerVisible) {
+
+        video.play().catch(
+          error => console.log(error)
+        );
+
+      }
+
+    });
+
+    // ===== VOLUME =====
+
+    volume.addEventListener("input", () => {
+
+      video.volume =
+        Number(volume.value);
+
+      if (video.volume === 0) {
+
+        video.muted = true;
+
+        muteButton.textContent = "UNMUTE";
+
+      } else {
+
+        video.muted = false;
+
+        muteButton.textContent = "MUTE";
+
+      }
+
+    });
+
+    // ===== MARKER FOUND =====
+
+    marker.addEventListener(
+      "targetFound",
+      () => {
+
+        markerVisible = true;
+
+        scanning.textContent =
+          "THE HARBRO MARKER DETECTED";
+
+        status.textContent =
+          "Golden Hologram Emerging...";
+
+        applyVideoOrientation();
+        applyCrop();
+        applyBlackRemoval();
+
+        startAnimation();
+        playAdvertisement();
+
+      }
+    );
+
+    // ===== MARKER LOST =====
+
+    marker.addEventListener(
+      "targetLost",
+      () => {
+
+        markerVisible = false;
+
+        scanning.textContent =
+          "Mencari marker THE HARBRO...";
+
+        status.textContent =
+          "Marker tidak terlihat";
+
+        video.pause();
+        video.currentTime = 0;
+
+        resetAnimation();
+
+      }
+    );
+
+    // ===== INITIALIZATION =====
+
+    createParticles();
+
+    resetAnimation();
+
+    applyBlackRemoval();
+
+    video.addEventListener("error", () => {
+
+      status.textContent =
+        "Tidak dapat memuat iklan MP4.";
+
+      console.error(
+        "Video error:",
+        video.error
+      );
+
+    });
+
+    video.addEventListener("loadeddata", () => {
+
+      console.log(
+        "Video iklan berhasil dimuat."
+      );
+
+    });
+
+  </script>
+
+</body>
+</html>
+
