@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -85,6 +84,7 @@
       color: white;
       font-size: 14px;
       font-weight: bold;
+      cursor: pointer;
     }
 
     #volume {
@@ -177,9 +177,7 @@
 
   <!-- KONTROL SUARA -->
   <div id="controls">
-
     <button id="mute">MUTE</button>
-
     <label style="color:white">
       Volume
       <input
@@ -190,7 +188,6 @@
         step="0.1"
         value="1">
     </label>
-
   </div>
 
   <!-- VIDEO IKLAN -->
@@ -228,10 +225,11 @@
     <!-- IMAGE TARGET -->
     <a-entity id="marker" mindar-image-target="targetIndex: 0">
 
-      <!-- 1. GOLDEN LIGHT -->
+      <!-- 1. GOLDEN LIGHT (Alas di permukaan marker meja) -->
       <a-plane
         id="goldBase"
-        position="0 0 0.025"
+        position="0 0 0.01"
+        rotation="-90 0 0"
         width="0.85"
         height="0.12"
         material="
@@ -246,7 +244,8 @@
       <!-- GOLDEN GLOW -->
       <a-plane
         id="goldGlow"
-        position="0 0 0.02"
+        position="0 0 0.005"
+        rotation="-90 0 0"
         width="1"
         height="0.25"
         material="
@@ -259,11 +258,11 @@
       </a-plane>
 
       <!-- HOLOGRAM RIG -->
-      <!-- Menghadap kamera HP -->
+      <!-- Rotasi (0 0 0) membuat hologram berdiri tegak 90 derajat di atas marker -->
       <a-entity
         id="holoRig"
-        position="0 0 0.08"
-        rotation="270 0 0"
+        position="0 0 0"
+        rotation="0 0 0"
         visible="false">
 
         <!-- VERTICAL REVEAL -->
@@ -321,7 +320,7 @@
           <a-video
             id="videoScreen"
             src="#adVideo"
-            position="0 0 0.025"
+            position="0 0 0.01"
             width="0.5625"
             height="1"
             material="shader: flat; side: double">
@@ -330,7 +329,7 @@
           <!-- GLOW LAYER -->
           <a-plane
             id="screenGlow"
-            position="0 0 0.015"
+            position="0 0 0"
             width="0.62"
             height="1.08"
             material="
@@ -348,7 +347,7 @@
       <!-- GOLDEN PARTICLES -->
       <a-entity
         id="particleRig"
-        position="0 0 0.12"
+        position="0 0 0"
         visible="false">
       </a-entity>
 
@@ -397,16 +396,14 @@
 
     // BUAT PARTIKEL EMAS
     function createParticles() {
-
       if (particles.length > 0) return;
 
       for (let i = 0; i < 22; i++) {
-
         const p = document.createElement("a-sphere");
 
         const x = (Math.random() - 0.5) * 0.85;
         const y = Math.random() * 1.2;
-        const z = 0.04;
+        const z = (Math.random() - 0.5) * 0.1;
 
         const radius = 0.004 + Math.random() * 0.008;
 
@@ -441,7 +438,6 @@
 
     // RESET HOLOGRAM
     function resetAnimation() {
-
       if (animationId) {
         cancelAnimationFrame(animationId);
         animationId = null;
@@ -449,10 +445,8 @@
 
       animationRunning = false;
 
-      holoRig.object3D.position.set(0, 0, 0.08);
+      holoRig.object3D.position.set(0, 0, 0);
 
-      // UKURAN HOLOGRAM 2X
-      // X = lebar, Y = tinggi, Z = kedalaman
       revealRig.object3D.scale.set(2, 0.001, 2);
 
       goldBase.object3D.scale.set(0.001, 1, 1);
@@ -470,9 +464,8 @@
       particleRig.setAttribute("visible", false);
     }
 
-    // LIMA EFEK HOLOGRAM
+    // ANIMASI MUNCULNYA HOLOGRAM
     function startAnimation() {
-
       if (animationRunning) return;
 
       resetAnimation();
@@ -490,7 +483,6 @@
       const startTime = performance.now();
 
       function animate(now) {
-
         if (!animationRunning || !markerVisible) return;
 
         const progress = Math.min(
@@ -523,11 +515,10 @@
           lightOpacity * 0.25
         );
 
-        // 2. VERTICAL RISE
-        holoRig.object3D.position.y = 0.58 * eased;
+        // 2. VERTICAL RISE (Naik di sumbu Y)
+        holoRig.object3D.position.y = 0.55 * eased;
 
-        // 3. VERTICAL REVEAL
-        // Tinggi akhir 2x, lebar tetap 2x
+        // 3. VERTICAL REVEAL (Membuka ke atas)
         revealRig.object3D.scale.y =
           Math.max(0.001, 2 * eased);
 
@@ -535,11 +526,8 @@
         const elapsed = (now - startTime) / 1000;
 
         particles.forEach(p => {
-
           const y = (p.y + elapsed * p.speed) % 1.3;
-
-          const x =
-            p.x + Math.sin(elapsed * 2 + p.phase) * 0.025;
+          const x = p.x + Math.sin(elapsed * 2 + p.phase) * 0.025;
 
           p.element.object3D.position.set(
             x,
@@ -559,7 +547,6 @@
         );
 
         if (progress >= 1) {
-
           animationRunning = false;
           animationId = null;
 
@@ -567,7 +554,6 @@
           goldGlow.setAttribute("material", "opacity", 0);
 
           status.textContent = "THE HARBRO HOLOGRAM ACTIVE";
-
           return;
         }
 
@@ -579,13 +565,11 @@
 
     // PUTAR VIDEO
     async function playAdvertisement() {
-
       if (!markerVisible) return;
 
       video.volume = Number(volume.value);
 
       try {
-
         await video.play();
 
         status.textContent = video.muted
@@ -593,21 +577,14 @@
           : "HOLOGRAPHIC ADVERTISEMENT PLAYING";
 
       } catch (error) {
-
         console.error("Video playback error:", error);
 
-        // COBA PUTAR TANPA SUARA
         try {
-
           video.muted = true;
           await video.play();
-
           status.textContent = "VIDEO PLAYING - SOUND MUTED";
-
         } catch (secondError) {
-
           status.textContent = "Video gagal diputar. Periksa file MP4.";
-
           console.error(secondError);
         }
       }
@@ -615,19 +592,15 @@
 
     // AKTIFKAN KAMERA DAN SUARA
     startButton.addEventListener("click", async () => {
-
       startButton.disabled = true;
       status.textContent = "Mengaktifkan kamera dan suara...";
 
       try {
-
-        // BUKA IZIN AUDIO BROWSER
         video.muted = false;
         video.volume = Number(volume.value);
 
         const soundPromise = video.play();
 
-        // MULAI MINDAR
         const arSystem = scene.systems["mindar-image-system"];
 
         if (!arSystem) {
@@ -642,94 +615,6 @@
         video.currentTime = 0;
 
         audioUnlocked = true;
-
         audioGate.classList.add("hidden");
 
         status.textContent = "Kamera aktif - Arahkan ke marker";
-
-        await cameraPromise;
-
-      } catch (error) {
-
-        console.error("AR start error:", error);
-
-        status.textContent =
-          "Gagal mengaktifkan kamera. Periksa izin kamera browser.";
-
-        startButton.disabled = false;
-      }
-    });
-
-    // MUTE / UNMUTE
-    muteButton.addEventListener("click", () => {
-
-      video.muted = !video.muted;
-
-      muteButton.textContent =
-        video.muted ? "UNMUTE" : "MUTE";
-
-      if (!video.muted && markerVisible) {
-        video.play().catch(error => console.log(error));
-      }
-    });
-
-    // VOLUME
-    volume.addEventListener("input", () => {
-
-      video.volume = Number(volume.value);
-
-      if (video.volume === 0) {
-        video.muted = true;
-        muteButton.textContent = "UNMUTE";
-      } else {
-        video.muted = false;
-        muteButton.textContent = "MUTE";
-      }
-    });
-
-    // MARKER TERDETEKSI
-    marker.addEventListener("targetFound", () => {
-
-      markerVisible = true;
-
-      scanning.textContent = "THE HARBRO MARKER DETECTED";
-
-      status.textContent = "Golden Hologram Emerging...";
-
-      startAnimation();
-
-      playAdvertisement();
-    });
-
-    // MARKER HILANG
-    marker.addEventListener("targetLost", () => {
-
-      markerVisible = false;
-
-      scanning.textContent = "Mencari marker THE HARBRO...";
-
-      status.textContent = "Marker tidak terlihat";
-
-      video.pause();
-      video.currentTime = 0;
-
-      resetAnimation();
-    });
-
-    // PERSIAPAN AWAL
-    createParticles();
-    resetAnimation();
-
-    video.addEventListener("error", () => {
-      status.textContent = "Tidak dapat memuat iklan MP4.";
-      console.error("Video error:", video.error);
-    });
-
-    video.addEventListener("loadeddata", () => {
-      console.log("Video iklan berhasil dimuat.");
-    });
-
-  </script>
-
-</body>
-</html>
