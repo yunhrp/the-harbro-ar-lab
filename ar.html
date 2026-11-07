@@ -245,7 +245,7 @@
 
         <a-entity id="revealRig">
 
-          <!-- BINGKAI EMAS SUDAH DIHAPUS -->
+          <!-- TIDAK ADA BINGKAI EMAS DI SINI -->
 
           <!-- VIDEO DEPAN -->
           <a-entity id="frontWrap" position="0 0 0.01">
@@ -330,6 +330,20 @@
     const HOLO_SCALE = 1.2;
     const HOLO_LIFT = 0.5 * HOLO_SCALE + 0.03;
 
+    // ===== POTONG TEPI VIDEO =====
+    // 1 = tidak dipotong. 0.92 = tepi terpotong 4% tiap sisi.
+    // Jika bingkai emas dari file MP4 masih terlihat, kecilkan: 0.88, 0.85, dst.
+    const CROP = 0.92;
+
+    function applyCrop() {
+      const offset = (1 - CROP) / 2;
+
+      [videoFront, videoBack].forEach(el => {
+        el.setAttribute("material", "repeat", CROP + " " + CROP);
+        el.setAttribute("material", "offset", offset + " " + offset);
+      });
+    }
+
     // ===== ORIENTASI VIDEO (tersimpan otomatis dari tombol) =====
     let vRot = 0;
     let vFlipX = 1;
@@ -374,7 +388,10 @@
       applyVideoOrientation();
     });
 
-    scene.addEventListener("loaded", applyVideoOrientation);
+    scene.addEventListener("loaded", () => {
+      applyVideoOrientation();
+      applyCrop();
+    });
 
     let markerVisible = false;
     let animationRunning = false;
@@ -622,6 +639,7 @@
       status.textContent = "Golden Hologram Emerging...";
 
       applyVideoOrientation();
+      applyCrop();
       startAnimation();
       playAdvertisement();
     });
