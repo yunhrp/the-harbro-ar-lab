@@ -264,7 +264,6 @@
         id="holoRig"
         position="0 0 0.08"
         rotation="-90 0 0"
-        scale="2 2 2"
         visible="false">
 
         <a-entity id="revealRig">
@@ -524,7 +523,7 @@
 
         // 3. VERTICAL REVEAL
         revealRig.object3D.scale.y =
-          Math.max(0.001, eased);
+          Math.max(0.001, 2 * eased);
 
         // 4. GOLDEN PARTICLES
         const elapsed = (now - startTime) / 1000;
